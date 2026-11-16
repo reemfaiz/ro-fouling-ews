@@ -1,0 +1,116 @@
+{
+  "folds": [
+    [
+      "2023-07-01",
+      "2024-01-01"
+    ],
+    [
+      "2024-01-01",
+      "2024-07-01"
+    ],
+    [
+      "2024-07-01",
+      "2025-01-01"
+    ]
+  ],
+  "holdout_train": "D",
+  "forecast_mae": {
+    "npf_decline_pct": {
+      "persistence": {
+        "h1": 0.566,
+        "h3": 0.937,
+        "h7": 1.563,
+        "h14": 2.819,
+        "h21": 4.054,
+        "h30": 5.365,
+        "all": 2.589
+      },
+      "linear_trend": {
+        "h1": 0.517,
+        "h3": 0.75,
+        "h7": 1.131,
+        "h14": 1.954,
+        "h21": 3.052,
+        "h30": 4.728,
+        "all": 1.957
+      },
+      "gbm": {
+        "h1": 0.728,
+        "h3": 0.822,
+        "h7": 1.043,
+        "h14": 1.327,
+        "h21": 1.416,
+        "h30": 1.669,
+        "all": 1.217
+      }
+    },
+    "dp_rise_pct": {
+      "persistence": {
+        "h1": 1.751,
+        "h3": 2.564,
+        "h7": 3.495,
+        "h14": 5.125,
+        "h21": 6.932,
+        "h30": 8.544,
+        "all": 4.852
+      },
+      "linear_trend": {
+        "h1": 1.776,
+        "h3": 2.62,
+        "h7": 3.337,
+        "h14": 4.906,
+        "h21": 6.407,
+        "h30": 9.734,
+        "all": 4.734
+      },
+      "gbm": {
+        "h1": 1.95,
+        "h3": 2.384,
+        "h7": 2.758,
+        "h14": 3.277,
+        "h21": 3.693,
+        "h30": 4.657,
+        "all": 3.149
+      }
+    }
+  },
+  "interval_coverage_p10_p90": {
+    "npf_decline_pct": 0.8,
+    "dp_rise_pct": 0.693
+  },
+  "days_to_clean": {
+    "linear_trend": {
+      "n_origins": 119,
+      "mae_days": 13.82,
+      "median_abs_err_days": 6.6,
+      "bias_days": 6.14,
+      "no_crossing_predicted_frac": 0.034
+    },
+    "gbm": {
+      "n_origins": 119,
+      "mae_days": 16.25,
+      "median_abs_err_days": 8.2,
+      "bias_days": 3.86,
+      "no_crossing_predicted_frac": 0.0,
+      "band_coverage": 0.319
+    }
+  },
+  "alert_red": {
+    "linear_trend": {
+      "precision": 0.77,
+      "recall": 0.794,
+      "f1": 0.782,
+      "tp": 77,
+      "fp": 23,
+      "fn": 20
+    },
+    "gbm": {
+      "precision": 0.459,
+      "recall": 0.856,
+      "f1": 0.597,
+      "tp": 83,
+      "fp": 98,
+      "fn": 14
+    }
+  }
+}

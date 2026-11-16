@@ -1,0 +1,9 @@
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{4pt}{1pt}
+\titleformat*{\section}{\normalsize\bfseries}
+\setlength{\parskip}{2pt}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.2em}
+\pagenumbering{gobble}
+\usepackage{etoolbox}
+\AtBeginEnvironment{longtable}{\footnotesize}

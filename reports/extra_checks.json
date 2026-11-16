@@ -1,0 +1,9 @@
+{
+  "cip_detection": {
+    "tp": 80,
+    "fp": 0,
+    "fn": 0,
+    "tolerance_days": 2
+  },
+  "n_tests": 51
+}

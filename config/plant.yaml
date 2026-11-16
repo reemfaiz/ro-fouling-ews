@@ -1,0 +1,22 @@
+# Plant-specific overrides (deep-merged on top of src/rofoul/default.yaml).
+# Only put here what differs for YOUR plant / CSV export.  Examples:
+#
+# input:
+#   columns:
+#     feed_pressure:   {name: "HP Pump Discharge Pressure", unit: psi}
+#     permeate_flow:   {name: "Product Flow", unit: gpm}
+#     feed_temp:       {name: "Feed Temp", unit: degF}
+#   conductivity_to_tds_factor: 0.65      # brackish water
+#
+# normalization:
+#   osmotic_coeff_bar_per_mgl: 0.00070    # brackish water
+#
+# thresholds:
+#   npf_decline_pct: 10
+#   dp_rise_pct: 15
+#
+# model:
+#   path: models/v2                        # swap to a retrained model
+
+model:
+  path: models/v1

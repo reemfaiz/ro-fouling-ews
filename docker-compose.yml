@@ -1,0 +1,11 @@
+services:
+  rofoul:
+    build: .
+    image: rofoul:1.0.0
+    ports:
+      - "8000:8000"
+    environment:
+      ROFOUL_CONFIG: /app/config/plant.yaml
+    volumes:
+      - ./models:/app/models:ro     # retrained models appear without a rebuild
+      - ./config:/app/config:ro     # plant-specific column names / units / thresholds

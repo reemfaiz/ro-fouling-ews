@@ -1,0 +1,135 @@
+# ---------------------------------------------------------------------------
+# rofoul — default configuration
+# Every behaviour that may differ between plants lives here, so that a new
+# plant, a new CSV layout or a retrained model needs a config change only.
+# Override with:  rofoul <cmd> --config my_plant.yaml   (deep-merged on top)
+#            or:  ROFOUL_CONFIG=my_plant.yaml
+# ---------------------------------------------------------------------------
+
+model:
+  # Directory containing model.joblib + metadata.json (relative paths are
+  # resolved against the current working directory first, then the repo root).
+  # Swap models by pointing this at another version directory, or set
+  # ROFOUL_MODEL_PATH. No code change required.
+  path: models/v1
+
+input:
+  # Canonical field -> CSV header + unit.  Headers are matched
+  # case/punctuation-insensitively; if a header is not found, a list of common
+  # aliases is tried (e.g. "Feed Pressure (psi)").  A unit written in the
+  # header, e.g. "(psi)" or "_degF", overrides the unit given here.
+  columns:
+    timestamp:             {name: timestamp}
+    train_id:              {name: train_id}               # optional; default "T1"
+    feed_temp:             {name: feed_temp_c,            unit: degC}
+    feed_pressure:         {name: feed_pressure_bar,      unit: bar}
+    concentrate_pressure:  {name: concentrate_pressure_bar, unit: bar}   # or diff_pressure
+    diff_pressure:         {name: diff_pressure_bar,      unit: bar}
+    permeate_pressure:     {name: permeate_pressure_bar,  unit: bar}     # optional (0 assumed)
+    feed_flow:             {name: feed_flow_m3h,          unit: m3/h}    # or concentrate_flow
+    permeate_flow:         {name: permeate_flow_m3h,      unit: m3/h}
+    concentrate_flow:      {name: concentrate_flow_m3h,   unit: m3/h}
+    feed_tds:              {name: feed_tds_mgl,           unit: mg/L}    # or feed_conductivity
+    feed_conductivity:     {name: feed_cond_uscm,         unit: uS/cm}
+    permeate_tds:          {name: permeate_tds_mgl,       unit: mg/L}    # optional (salt passage)
+    permeate_conductivity: {name: permeate_cond_uscm,     unit: uS/cm}
+    cip:                   {name: cip}                    # optional 0/1 cleaning log
+  timestamp_format: null        # null = auto (ISO 8601 recommended), e.g. "%d/%m/%Y %H:%M"
+  dayfirst: false               # true for 31/01/2025-style dates when timestamp_format is null
+  timezone: null                # e.g. "Asia/Riyadh"; null = naive timestamps
+  default_train_id: T1
+  # TDS (mg/L) = factor * conductivity (uS/cm).  ~0.70 seawater, ~0.65 brackish.
+  conductivity_to_tds_factor: 0.70
+
+validation:
+  max_gap_hours: 6              # gaps longer than this are reported
+  long_gap_days: 3              # gaps longer than this break trend features
+  min_history_days: 21          # per train, needed to forecast
+  min_coverage_hours_per_day: 4 # a day with less data is treated as missing
+  max_bad_row_fraction: 0.20    # above this the file is rejected
+  stuck_sensor_hours: 24        # identical readings for longer -> warning
+  outlier_mad_z: 8.0            # robust z-score for spike removal
+  stale_data_days: 3            # warn if the last valid day is older than this vs file end
+  # Plausible ranges AFTER unit conversion; used to detect wrong units.
+  ranges:
+    feed_temp:         [0, 50]        # degC
+    feed_pressure:     [2, 90]        # bar
+    diff_pressure:     [0.02, 10]     # bar
+    permeate_pressure: [-1, 10]       # bar(g)
+    flow:              [0.01, 100000] # m3/h
+    feed_tds:          [50, 80000]    # mg/L
+    recovery:          [0.05, 0.95]
+
+normalization:
+  # Temperature correction factor:
+  #   filmtec : exp(U*(1/298.15 - 1/(273.15+T))), U=2640 (T>=25C) / 3020 (T<25C)
+  #   astm    : 1.03**(T-25)   (ASTM D4516 simplification)
+  tcf_method: filmtec
+  # Osmotic pressure: pi[bar] = coeff * TDS[mg/L] * (T+273.15)/298.15
+  # 0.00077 fits seawater (35 g/L -> ~27 bar); ~0.00070 for brackish/NaCl.
+  osmotic_coeff_bar_per_mgl: 0.00077
+  feed_brine_average: log       # log (ASTM annex) | arithmetic
+  # Optional concentration-polarization correction of the feed-side osmotic
+  # pressure, CP = exp(J / k).  Off by default (ASTM D4516 has none).  In SWRO,
+  # where NDP is a small difference of large pressures, neglecting CP leaves a
+  # temperature-dependent bias in NPF (see technical report, section 5).
+  concentration_polarization:
+    enabled: false
+    membrane_area_m2: null      # total active area of the train
+    k_lmh: 150.0                # mass-transfer coefficient, L/m2/h
+  assumed_rejection_if_no_permeate_tds: 0.995
+  dp_flow_exponent: 1.5         # nDP = DP * (Qavg_ref / Qavg)^n * (mu_25 / mu_T)^m
+  dp_viscosity_exponent: 0.3    # m; 0 disables the viscosity (temperature) correction
+  # Reference ("standard") conditions.  mode=auto: per-train medians of the
+  # first `auto_days` valid days.  mode=fixed: use the values below.
+  reference:
+    mode: auto
+    auto_days: 7
+    temp_c: 25.0
+    ndp_bar: null
+    permeate_flow_m3h: null
+    avg_feed_brine_flow_m3h: null
+    feed_tds_mgl: null
+    recovery: null
+
+cycles:
+  # A cleaning (CIP) starts a new cycle.  Taken from the `cip` column when it
+  # exists, otherwise detected as a confirmed jump in normalized permeate flow.
+  detect_jump_pct: 4.0          # NPF rise vs previous 3-day median
+  confirm_days: 1               # the jump must persist this many extra days
+  baseline_days: 3              # post-clean baseline = median of first N days
+  min_cycle_days: 5
+
+thresholds:
+  # Clean when EITHER indicator crosses its limit (relative to the post-clean
+  # baseline).  Values follow membrane-manufacturer guidance (Hydranautics
+  # TSB107, DuPont FilmTec): NPF -10%, normalized DP +15%.
+  npf_decline_pct: 10.0
+  dp_rise_pct: 15.0
+
+forecast:
+  horizon_days: 30
+  quantiles: [0.1, 0.5, 0.9]
+  trend_window_days: 14         # used by the linear-trend baseline + features
+  max_extrapolation_days: 180   # beyond-horizon days-to-clean are capped here
+  min_cycle_days_for_forecast: 3
+
+alerts:
+  red_days: 7                   # predicted cleaning need within 7 days -> RED
+  amber_days: 14                # within 14 days -> AMBER, else GREEN
+
+training:
+  random_state: 42
+  max_iter: 300
+  learning_rate: 0.06
+  origin_stride: 2              # use every 2nd forecast origin (adjacent days are near-duplicates)
+  max_leaf_nodes: 31
+  min_samples_leaf: 40
+  l2_regularization: 1.0
+  min_days_since_clean: 3       # origins earlier in a cycle are not used
+  calibrate: true               # decision quantile + conformal band on the last 25% of training time
+
+api:
+  host: 0.0.0.0
+  port: 8000
+  max_upload_mb: 50
