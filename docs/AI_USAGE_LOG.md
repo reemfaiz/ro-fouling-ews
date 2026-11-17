@@ -39,7 +39,7 @@ All of these happened during this build and are fixed in the code.
 | 8 | Normalized ΔP ignored the temperature (viscosity) effect, giving a 3–4 percentage-point error against the simulator truth. | Comparison with the ground truth | Added a viscosity correction, (μ25/μT)^0.3, with the exponent from the Schock & Miquel spacer friction factor. It was **not** tuned to the simulator. |
 | 9 | Test fixtures with perfectly constant values were rejected by the stuck-sensor check. | Failing tests | Fixtures add realistic measurement noise |
 | 10 | The assistant could not open one paper PDF (the repository returned a login page), and the sandbox could not download any dataset. | Tool errors | Used the publisher's HTML page; assessed datasets from metadata only, and said so in `DATA_SOURCES.md` |
-| 11 | **The Docker image could not be built in the AI sandbox** because Docker Hub is blocked there. | Build error | The `pip install` route was verified in a fresh virtual environment. **The Docker route must be checked on a machine with internet access before the live session.** |
+| 11 | **The Docker image could not be built in the AI sandbox** because Docker Hub is blocked there. A second risk: a model pickled with one scikit-learn version may not load under another. | Build error; reasoning about portability | The `pip install` route was verified in a fresh virtual environment from a clean `git clone`. The Docker build now checks that the model loads and rebuilds it from the seeded simulator if it does not; at run time an unloadable model falls back to the baseline with a warning. **The Docker route must still be tested on a machine with internet access before the live session.** |
 
 ## How the outputs were verified
 

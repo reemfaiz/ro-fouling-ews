@@ -56,7 +56,7 @@ Example output of `rofoul predict`:
 
 ```
 train   last day     NPF decl % DP rise %  days->clean  range         alert   message
-P1      2025-04-30          6.7       6.7            9  6-10          AMBER   Cleaning expected in ~9 days (limiting: npf_decline_pct).
+P1      2025-04-30          6.7       6.7            8  5-10          AMBER   Cleaning expected in ~8 days (limiting: npf_decline_pct).
         ! flux vs history = 0.846 is outside the training range [0.899, 1.18]; forecast is an extrapolation - ...
 ```
 
@@ -236,7 +236,18 @@ and a recovered 10 % permeability loss. They also cover:
   polarization is ignored. TCF uses FilmTec constants. These create small systematic errors,
   quantified against the simulator truth in the report.
 
-## 9. Repository layout
+## 9. Troubleshooting
+
+| symptom | fix |
+|---|---|
+| `model_unloadable` / `model_version_mismatch` warning (different scikit-learn on your machine) | rebuild the model locally (~1 min): `rofoul synth --out data/synthetic && rofoul train data/synthetic/plant_data.csv --out models/v1` |
+| `No model found at ...` when running outside the repository folder | run from the repo root, or pass `--model /path/to/models/v1`, or set `ROFOUL_MODEL_PATH` |
+| `missing_column` error | map your header in a config file: `input.columns.<field>.name` (see `config/plant.yaml`) |
+| `implausible_units` error | set `input.columns.<field>.unit`, or put the unit in the header, e.g. `Feed Pressure (psi)` |
+| dates parsed wrongly (31/01 vs 01/31) | set `input.dayfirst: true` or `input.timestamp_format` |
+| brackish-water plant | set `normalization.osmotic_coeff_bar_per_mgl: 0.00070` and `input.conductivity_to_tds_factor: 0.65` |
+
+## 10. Repository layout
 
 ```
 src/rofoul/        package: validation, units, normalize, cycles, features, models, forecast,

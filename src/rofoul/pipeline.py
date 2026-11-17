@@ -62,11 +62,26 @@ def prepare_daily(source, cfg: dict) -> tuple[pd.DataFrame, ValidationReport, di
 def load_model(cfg: dict, report: ValidationReport | None = None):
     path = resolve_model_path(cfg)
     try:
-        return GBMForecaster.load(path)
+        model = GBMForecaster.load(path)
     except FileNotFoundError as exc:
         if report is not None:
             report.warn("model_missing", f"{exc} Falling back to the linear-trend baseline.")
         return None
+    except Exception as exc:  # e.g. pickle written by an incompatible scikit-learn version
+        msg = (f"Model at {path} could not be loaded ({type(exc).__name__}: {exc}). Falling back to the "
+               "linear-trend baseline. Rebuild it on this machine with: rofoul synth --out data/synthetic && "
+               f"rofoul train data/synthetic/plant_data.csv --out {cfg['model']['path']}")
+        log.warning(msg)
+        if report is not None:
+            report.warn("model_unloadable", msg)
+        return None
+    import sklearn
+    trained = model.metadata.get("sklearn_version")
+    if trained and trained != sklearn.__version__ and report is not None:
+        report.warn("model_version_mismatch",
+                    f"Model was trained with scikit-learn {trained}, running {sklearn.__version__}. "
+                    "Predictions should still work; retrain (`rofoul train`) if they look wrong.")
+    return model
 
 
 def _ood_warnings(origin: pd.Series, model: GBMForecaster) -> list[str]:

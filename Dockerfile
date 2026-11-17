@@ -17,6 +17,13 @@ COPY models ./models
 COPY config ./config
 COPY data/sample ./data/sample
 
+# Make sure the shipped model loads with the scikit-learn version installed in
+# the image; if it does not (pickle incompatibility), rebuild it from the
+# seeded synthetic dataset (~1 min) so the image is always self-consistent.
+RUN python -c "from rofoul.models import GBMForecaster; GBMForecaster.load('models/v1')" \
+    || (rofoul synth --out /tmp/synthetic && rofoul train /tmp/synthetic/plant_data.csv --out models/v1 --version v1 \
+        && rm -rf /tmp/synthetic)
+
 RUN useradd --create-home appuser && chown -R appuser /app
 USER appuser
 
